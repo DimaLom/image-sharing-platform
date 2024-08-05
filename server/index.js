@@ -1,11 +1,11 @@
+import cors from 'cors';
+import dotenv from 'dotenv';
 import express from 'express';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import multer from 'multer';
-import path from 'path';
-import cors from 'cors';
 
-import User from './models/User.js';
+import { File } from './models/File.js';
+import { User } from './models/User.js';
 
 dotenv.config();
 
@@ -30,17 +30,9 @@ app.use(express.json());
 // Разрешаем CORS для всех запросов
 app.use(cors());
 
-// Определяем место хранения и имя файла
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'server/uploads/');
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname)); // Добавляем уникальное имя к файлу
-  },
-});
-
-const upload = multer({ storage });
+// Настройка multer для обработки файла в памяти
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 app.post('/users', async (req, res) => {
   try {
@@ -60,25 +52,47 @@ app.post('/users', async (req, res) => {
   }
 });
 
-app.post('/upload', upload.single('file'), (req, res) => {
+// Маршрут для загрузки файла и сохранения его в MongoDB
+app.post('/upload', upload.single('file'), async (req, res) => {
   try {
-    res.status(201).send({
-      filename: req.file.filename,
-      message: 'File uploaded successfully!',
+    const { originalname, mimetype, buffer } = req.file;
+
+    // Создаем новый файл и сохраняем его в базу данных
+    const newFile = new File({
+      filename: originalname,
+      data: buffer,
+      contentType: mimetype,
     });
+
+    await newFile.save();
+
+    res
+      .status(201)
+      .send({ message: 'File uploaded and saved to database successfully!' });
   } catch (err) {
     res.status(400).send({ error: err.message });
   }
 });
 
-app.get('/files/:filename', (req, res) => {
-  const filename = req.params.filename;
-  const filepath = path.join('uploads', filename);
-  res.sendFile(filepath, { root: '.' }, (err) => {
-    if (err) {
-      res.status(404).send({ error: 'File not found' });
+// Маршрут для получения файла из базы данных
+app.get('/files/:id', async (req, res) => {
+  try {
+    const file = await File.findById(req.params.id);
+
+    if (!file) {
+      return res.status(404).send({ error: 'File not found' });
     }
-  });
+
+    res.set('Content-Type', file.contentType);
+    res.send(file.data);
+  } catch (err) {
+    console.log(err);
+    if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      res.status(400).send({ error: 'Invalid file ID' });
+    } else {
+      res.status(500).send({ error: 'An error occurred' });
+    }
+  }
 });
 
 // Запуск сервера
