@@ -3,8 +3,6 @@ import mongoose from 'mongoose';
 import { File } from '../models/File.js';
 
 export class FilesService {
-  constructor() {}
-
   async uploadFile(req, res) {
     try {
       const { originalname, mimetype, buffer } = req.file;
