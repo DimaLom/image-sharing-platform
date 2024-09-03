@@ -1,12 +1,45 @@
-import express from 'express';
+import mongoose from 'mongoose';
+import { User } from '../models/User.js';
 
-import { UsersService } from '../services/users-service.js';
+export class UsersController {
+  async createUser(req, res) {
+    try {
+      const { name, email, password } = req.body;
 
-const router = express.Router();
+      const user = new User({
+        name,
+        email,
+        password,
+      });
 
-const service = new UsersService();
+      await user.save();
 
-router.post('/create', service.createUser);
-router.get('/:id', service.getUser);
+      res.status(201).send(user);
+    } catch (error) {
+      res.status(400).send(error);
+    }
+  }
 
-export const usersController = router;
+  async getUser(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Проверка на валидность MongoDB ObjectID
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).send({ error: 'Invalid user ID' });
+      }
+
+      const user = await User.findById(id);
+
+      if (!user) {
+        return res.status(404).send({ error: 'User not found' });
+      }
+
+      // Возвращаем данные пользователя
+      res.status(200).send(user);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send({ error: 'An error occurred' });
+    }
+  }
+}
