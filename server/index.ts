@@ -3,18 +3,20 @@ import dotenv from 'dotenv';
 import express from 'express';
 import mongoose from 'mongoose';
 
-import { usersController } from './controllers/users-controller.js';
-import { filesController } from './controllers/files-controller.js';
+import { fileRoutes } from './routes/file-routes';
+import { userRoutes } from './routes/user-routes';
 
 dotenv.config();
 
 const app = express();
 
+if (!process.env.MONGODB_URI) {
+  throw new Error('MONGODB_URI is not defined');
+}
+
 // Подключение к базе данных
 mongoose
-  .connect(process.env.MONGODB_URI, {
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('Connected to MongoDB');
   })
@@ -28,11 +30,11 @@ app.use(express.json());
 // Разрешаем CORS для всех запросов
 app.use(cors());
 
-app.use('/api/users', usersController);
-app.use('/api/files', filesController);
+app.use('/api/user', userRoutes);
+app.use('/api/file', fileRoutes);
 
 // Запуск сервера
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
