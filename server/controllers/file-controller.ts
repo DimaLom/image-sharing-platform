@@ -1,12 +1,14 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import mongoose from 'mongoose';
 
 import { CommonResponseMessage } from '../constants/CommonResponseMessage';
 import { FileResponseMessage } from '../constants/FileResponseMessage';
 import { File } from '../models/File';
+import { User } from '../models/User';
+import { AppRequest } from '../types';
 
 export class FileController {
-  public static async uploadFile(req: Request, res: Response) {
+  public static async uploadFile(req: AppRequest, res: Response) {
     try {
       if (!req.file) {
         return res
@@ -16,6 +18,7 @@ export class FileController {
 
       const { originalname, mimetype, buffer } = req.file;
 
+      const userId = req.user?.id;
       // Создаем новый файл и сохраняем его в базу данных
       const newFile = new File({
         filename: originalname,
@@ -24,6 +27,9 @@ export class FileController {
       });
 
       const savedFile = await newFile.save();
+
+      // Добавляем файл в список файлов пользователя
+      await User.findByIdAndUpdate(userId, { $push: { files: savedFile._id } });
 
       // Отправляем в ответ название файла и его ID
       return res.status(201).send({
@@ -37,7 +43,7 @@ export class FileController {
     }
   }
 
-  public static async getFile(req: Request, res: Response) {
+  public static async getFile(req: AppRequest, res: Response) {
     try {
       const file = await File.findById(req.params.id);
 
@@ -60,7 +66,7 @@ export class FileController {
     }
   }
 
-  public static async deleteFile(req: Request, res: Response) {
+  public static async deleteFile(req: AppRequest, res: Response) {
     try {
       const { id } = req.params;
 

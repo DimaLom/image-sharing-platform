@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
+import { JwtPayload } from 'jsonwebtoken';
 
-type AppRequest = Request & { user?: string | object };
+export type AppRequest = Request & { user?: JwtPayload };
 
 export type MiddlewareFunction = (
   req: AppRequest,

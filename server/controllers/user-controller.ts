@@ -20,7 +20,12 @@ export class UserController {
 
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      const user = new User({ name, email, password: hashedPassword });
+      const user = new User({
+        name,
+        email,
+        password: hashedPassword,
+        files: [],
+      });
       await user.save();
 
       if (!process.env.JWT_SECRET) {

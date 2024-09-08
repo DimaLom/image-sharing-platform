@@ -1,9 +1,10 @@
 import jwt from 'jsonwebtoken';
 
 import { CommonResponseMessage } from '../constants/CommonResponseMessage';
+import { User } from '../models/User';
 import { MiddlewareFunction } from '../types';
 
-export const authMiddleware: MiddlewareFunction = (req, res, next) => {
+export const authMiddleware: MiddlewareFunction = async (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
 
   if (!token) {
@@ -16,6 +17,21 @@ export const authMiddleware: MiddlewareFunction = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (typeof decoded === 'string') {
+      return res
+        .status(401)
+        .send({ error: CommonResponseMessage.AccessDenied });
+    }
+
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res
+        .status(401)
+        .send({ error: CommonResponseMessage.AccessDenied });
+    }
+
     req.user = decoded;
 
     next();
