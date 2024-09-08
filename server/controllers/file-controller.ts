@@ -6,7 +6,7 @@ import { FileResponseMessage } from '../constants/FileResponseMessage';
 import { File } from '../models/File';
 
 export class FileController {
-  async uploadFile(req: Request, res: Response) {
+  public static async uploadFile(req: Request, res: Response) {
     try {
       if (!req.file) {
         return res
@@ -37,7 +37,7 @@ export class FileController {
     }
   }
 
-  async getFile(req: Request, res: Response) {
+  public static async getFile(req: Request, res: Response) {
     try {
       const file = await File.findById(req.params.id);
 
@@ -59,7 +59,8 @@ export class FileController {
       return res.status(500).send({ error: CommonResponseMessage.ServerError });
     }
   }
-  async deleteFile(req: Request, res: Response) {
+
+  public static async deleteFile(req: Request, res: Response) {
     try {
       const { id } = req.params;
 

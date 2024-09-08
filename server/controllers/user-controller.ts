@@ -8,7 +8,7 @@ import { UserResponseMessage } from '../constants/UserResponseMessage';
 import { User } from '../models/User';
 
 export class UserController {
-  async register(req: Request, res: Response) {
+  public static async register(req: Request, res: Response) {
     try {
       const { name, email, password } = req.body;
 
@@ -43,7 +43,7 @@ export class UserController {
     }
   }
 
-  async login(req: Request, res: Response) {
+  public static async login(req: Request, res: Response) {
     try {
       const { email, password } = req.body;
 
@@ -81,7 +81,7 @@ export class UserController {
     }
   }
 
-  async getUser(req: Request, res: Response) {
+  public static async getUser(req: Request, res: Response) {
     try {
       const { id } = req.params;
 

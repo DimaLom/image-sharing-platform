@@ -2,17 +2,21 @@ import express from 'express';
 import multer from 'multer';
 
 import { FileController } from '../controllers/file-controller';
+import { authMiddleware } from '../utils/authMiddleware';
 
 const router = express.Router();
-
-const controller = new FileController();
 
 // Настройка multer для обработки файла в памяти
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-router.post('/upload', upload.single('file'), controller.uploadFile);
-router.get('/:id', controller.getFile);
-router.delete('/:id', controller.deleteFile);
+router.post(
+  '/upload',
+  authMiddleware,
+  upload.single('file'),
+  FileController.uploadFile,
+);
+router.get('/:id', authMiddleware, FileController.getFile);
+router.delete('/:id', authMiddleware, FileController.deleteFile);
 
 export const fileRoutes = router;
