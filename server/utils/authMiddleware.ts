@@ -32,6 +32,12 @@ export const authMiddleware: MiddlewareFunction = async (req, res, next) => {
         .send({ error: CommonResponseMessage.AccessDenied });
     }
 
+    if (decoded.iat! < user.tokenIssuedAt) {
+      return res
+        .status(401)
+        .send({ error: CommonResponseMessage.TokenExpired });
+    }
+
     req.user = decoded;
 
     next();

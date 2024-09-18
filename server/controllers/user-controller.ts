@@ -1,11 +1,11 @@
 import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 
 import { CommonResponseMessage } from '../constants/CommonResponseMessage';
 import { UserResponseMessage } from '../constants/UserResponseMessage';
 import { User } from '../models/User';
+import { jwtSign } from '../utils/jwtSign';
 
 export class UserController {
   public static async register(req: Request, res: Response) {
@@ -25,17 +25,15 @@ export class UserController {
         email,
         password: hashedPassword,
         files: [],
+        tokenIssuedAt: Date.now(),
       });
       await user.save();
 
-      if (!process.env.JWT_SECRET) {
-        return res
-          .status(500)
-          .send({ error: CommonResponseMessage.ServerError });
+      const { error, token } = jwtSign(user._id, user.tokenIssuedAt);
+
+      if (error) {
+        return res.status(500).send({ error });
       }
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-        expiresIn: '12h',
-      });
 
       return res.status(201).send({
         token,
@@ -68,15 +66,16 @@ export class UserController {
           .send({ error: UserResponseMessage.InvalidPassword });
       }
 
-      if (!process.env.JWT_SECRET) {
-        return res
-          .status(500)
-          .send({ error: CommonResponseMessage.ServerError });
-      }
+      const tokenIssuedAt = Date.now();
 
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-        expiresIn: '12h',
-      });
+      user.tokenIssuedAt = tokenIssuedAt;
+      await user.save();
+
+      const { error, token } = jwtSign(user._id, user.tokenIssuedAt);
+
+      if (error) {
+        return res.status(500).send({ error });
+      }
 
       return res.status(200).send({ token });
     } catch (error) {

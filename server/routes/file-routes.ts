@@ -16,6 +16,8 @@ router.post(
   upload.single('file'),
   FileController.uploadFile,
 );
+
+router.get('/list', authMiddleware, FileController.getUserFiles);
 router.get('/:id', authMiddleware, FileController.getFile);
 router.delete('/:id', authMiddleware, FileController.deleteFile);
 

@@ -20,6 +20,10 @@ const userSchema = new Schema({
       ref: 'File',
     },
   ],
+  tokenIssuedAt: {
+    type: Number,
+    default: Date.now,
+  },
 });
 
 export const User = model('User', userSchema);
