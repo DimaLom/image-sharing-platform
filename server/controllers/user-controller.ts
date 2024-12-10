@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import { CommonResponseMessage } from '../constants/CommonResponseMessage';
 import { UserResponseMessage } from '../constants/UserResponseMessage';
 import { User } from '../models/User';
+import { AppRequest } from '../types';
 import { jwtSign } from '../utils/jwtSign';
 
 export class UserController {
@@ -85,9 +86,9 @@ export class UserController {
     }
   }
 
-  public static async getUser(req: Request, res: Response) {
+  public static async getUser(req: AppRequest, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.user?.id;
 
       // Проверка на валидность MongoDB ObjectID
       if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -104,6 +105,41 @@ export class UserController {
 
       // Возвращаем данные пользователя
       res.status(200).send(user);
+    } catch (error) {
+      console.error(error);
+
+      res.status(500).send({ error: CommonResponseMessage.ServerError });
+    }
+  }
+
+  public static async updateUser(req: AppRequest, res: Response) {
+    try {
+      const id = req.user?.id;
+
+      // Проверка на валидность MongoDB ObjectID
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).send({ error: UserResponseMessage.InvalidID });
+      }
+
+      const user = await User.findById(id);
+
+      if (!user) {
+        return res
+          .status(404)
+          .send({ error: UserResponseMessage.UserNotFound });
+      }
+
+      const { name, email } = req.body;
+
+      if (!name && !email) {
+        return res.status(400).send({ error: UserResponseMessage.InvalidData });
+      }
+
+      user.name = name || user.name;
+      user.email = email || user.email;
+      await user.save();
+
+      res.status(200).send({ message: UserResponseMessage.Updated });
     } catch (error) {
       console.error(error);
 
